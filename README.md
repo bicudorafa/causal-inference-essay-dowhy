@@ -1,5 +1,5 @@
-# Causal Inference - DoWhy Samples
-This repository contains contains use cases (a synthetic and a real one) on how to implement the causal inference framework to assess causal relationships on data, based on the tools contained on the [DoWhy](https://github.com/Microsoft/dowhy) Microsoft Project.
+# Causal Inference Essay - DoWhy
+This repository contains two essays (a synthetic and a real one) on how to implement the causal inference framework to assess causal relationships on data, based on the tools contained on the [DoWhy](https://github.com/Microsoft/dowhy) Microsoft Project.
 # Installation
 ### Environment
 For most the calculations, I used the Jupyter containerised version provided by the [Jupyter Docker Stackes](https://jupyter-docker-stacks.readthedocs.io/en/latest/) project, that provides images containing docker images of jupyter ready to use environments. For this project, I used the minimal notebook image, tag: dc9744740e12 (jupyter/minimal-notebook:dc9744740e12)
