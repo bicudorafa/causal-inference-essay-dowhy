@@ -1,2 +1,4 @@
 # notebooj checkpoints
 .ipynb_checkpoints/
+# vscode config files
+.vscode/
