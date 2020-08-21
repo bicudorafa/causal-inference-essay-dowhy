@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib as plt
 import warnings
 warnings.filterwarnings('ignore')
+from pandas_profiling import ProfileReport
 # dowhy framework
 #import dowhy
 #import dowhy.api
@@ -17,13 +18,18 @@ warnings.filterwarnings('ignore')
 #from sklearn.preprocessing import PolynomialFeatures
 #from sklearn.linear_model import LassoCV
 #from sklearn.ensemble import GradientBoostingRegressor
-#%% lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
+
+## Extracting lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
+#%% rct data
 rct_data = pd.read_stata('../data/raw/nsw.dta')
-rct_data.head()
+#%% observational data
+observational_data = pd.concat(
+    [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
+    ignore_index=True
+)
+## ppreliminary analysis
 # %%
-observational_data_psid = pd.read_stata('../data/raw/psid_controls.dta')
-observational_data_psid.head()
+ProfileReport(rct_data)
 # %%
-observational_data_cps = pd.read_stata('../data/raw/cps_controls.dta')
-observational_data_cps.head()
+ProfileReport(observational_data)
 # %%
