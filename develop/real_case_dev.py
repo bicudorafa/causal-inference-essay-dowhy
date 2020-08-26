@@ -29,7 +29,15 @@ observational_data = pd.concat(
 )
 ## ppreliminary analysis
 # %%
-ProfileReport(rct_data)
+#ProfileReport(rct_data)
 # %%
-ProfileReport(observational_data)
+#ProfileReport(observational_data)
 # %%
+rct_data[[col for col in rct_data.columns if col != 're78']].groupby('treat').mean()
+# %%
+## Analysis strategy
+#1 Talk a little bit about the original data, its distribution and the role of randomization
+#2 Demonstrate how the treatment effect is scored by simple mean difference (and maybe by linear regression)
+#3 Present the external data and how it difers from the original one
+#4 explain the tecniques are able to create a new control based on the causal inference methods
+#5 Show rhe results and conclusion
