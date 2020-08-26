@@ -1,5 +1,5 @@
 # set base image (host OS)
-FROM python:3.7.7-slim
+FROM python:3.8-slim-buster
 RUN apt-get update
 # set the working directory in the container
 WORKDIR /repo
