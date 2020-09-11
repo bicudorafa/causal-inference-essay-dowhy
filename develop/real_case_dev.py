@@ -3,7 +3,7 @@
 # python basics dependencies
 import numpy as np
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 import matplotlib as plt
 import warnings
 warnings.filterwarnings('ignore')
@@ -40,10 +40,14 @@ rct_data[[col for col in rct_data.columns if col != 're78']].groupby('treat').me
 # %%
 ## Analysis strategy
 #1 Talk a little bit about the original data, its distribution and the role of randomization
-#2 Demonstrate how the treatment effect is scored by simple t test
+#  - La Londe main goal: all tecniques available by his time weren't capable of got similar results to the experimental design,
+#    then claiming that experimental design was the only reasonable tool to infer treatment impact
+#2 Demonstrate how the treatment effect is scored by simple t test and an adjusted result by regression
 #3 Present the external data and how it difers from the original one
 # Simulates original La Londes exercice to demonstrate how to apply a simple OLS into new data generates biased results
 #4 explain the tecniques are able to create a new control based on the causal inference methods
+#  - Exercice proposed by Dehejia and Wahba: they claimed that most modern tecniques, such as propensity scores matching, 
+#  were capable of generate better results
 #5 Show rhe results and conclusion
 # %%
 def ttest(control, treatment, alpha=0.05):
@@ -70,8 +74,10 @@ def ttest(control, treatment, alpha=0.05):
 # %%
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
 # %%
-Y = rct_data['re78'].values
-X = rct_data[[col for col in rct_data.columns if col not in ('re78','data_id')]].values
+rct_data_to_reg = rct_data.copy()
+rct_data_to_reg['age_sqr'] = rct_data_to_reg.age**2
+Y = rct_data_to_reg['re78'].values
+X = rct_data_to_reg[[col for col in rct_data_to_reg.columns if col not in ('re78','data_id')]].values
 X = sm.add_constant(X)
 model = sm.OLS(Y,X)
 results = model.fit()
