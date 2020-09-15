@@ -36,12 +36,16 @@ observational_data = pd.concat(
 # %%
 #ProfileReport(observational_data)
 # %%
-rct_data[[col for col in rct_data.columns if col != 're78']].groupby('treat').mean()
+rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
+# %%
+observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
 # %%
 ## Analysis strategy
 #1 Talk a little bit about the original data, its distribution and the role of randomization
 #  - La Londe main goal: all tecniques available by his time weren't capable of got similar results to the experimental design,
 #    then claiming that experimental design was the only reasonable tool to infer treatment impact
+#  - Try to simulate some of the proposed alternative frameworks used by La Londe (Fixed Effect,TWO-STAGE ESTIMATOR)
+#      - Mas bem talvez, nem os caras do 2o paper o fizeram. Mais importante é mostrar como Dummy Nonexperimental estimation é Naivy
 #2 Demonstrate how the treatment effect is scored by simple t test and an adjusted result by regression
 #3 Present the external data and how it difers from the original one
 # Simulates original La Londes exercice to demonstrate how to apply a simple OLS into new data generates biased results
@@ -75,11 +79,23 @@ def ttest(control, treatment, alpha=0.05):
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
 # %%
 rct_data_to_reg = rct_data.copy()
-rct_data_to_reg['age_sqr'] = rct_data_to_reg.age**2
+#rct_data_to_reg['age_sqr'] = rct_data_to_reg.age**2
 Y = rct_data_to_reg['re78'].values
+# exogenous variables used by lalonde:  age, age squared, years of schooling, high school dropout status, and race
 X = rct_data_to_reg[[col for col in rct_data_to_reg.columns if col not in ('re78','data_id')]].values
 X = sm.add_constant(X)
 model = sm.OLS(Y,X)
 results = model.fit()
 print(results.summary())
+print(results.params)
+# %%
+treated = rct_data[rct_data.treat == 1]
+for obs_data_group in observational_data.data_id.unique():
+    to_reg = pd.concat([treated, observational_data[observational_data.data_id == obs_data_group]])
+    Y = to_reg['re78'].values
+    X = to_reg[[col for col in rct_data_to_reg.columns if col not in ('re78','data_id')]].values
+    X = sm.add_constant(X)
+    model = sm.OLS(Y,X)
+    results = model.fit()
+    print(results.summary())
 # %%
