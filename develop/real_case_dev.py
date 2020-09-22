@@ -12,10 +12,9 @@ from statsmodels.stats.power import tt_ind_solve_power
 from numpy.random import seed
 from scipy.stats import ttest_ind
 import statsmodels.api as sm
-#import dowhy
-#import dowhy.api
-#from dowhy import CausalModel
-#import dowhy.datasets
+import dowhy
+import dowhy.api
+from dowhy import CausalModel
 #from dowhy.do_samplers.weighting_sampler import WeightingSampler
 ## auxiliar libraries for econml support
 #from sklearn.preprocessing import PolynomialFeatures
@@ -30,7 +29,7 @@ observational_data = pd.concat(
     [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
     ignore_index=True
 )
-## ppreliminary analysis
+## preliminary analysis
 # %%
 #ProfileReport(rct_data)
 # %%
@@ -98,4 +97,31 @@ for obs_data_group in observational_data.data_id.unique():
     model = sm.OLS(Y,X)
     results = model.fit()
     print(results.summary())
+# %%
+synthetic_cps1 =pd.concat(
+    [treated, observational_data[observational_data.data_id == 'CPS1']]
+    ).assign(
+        treat=lambda x: x.treat.astype(bool)
+    )
+#synthetic_psid = pd.concat([treated, observational_data[observational_data.data_id == 'PSID']])
+# %%
+# With graph
+model_cps1=CausalModel(
+    data = synthetic_cps1
+    , treatment='treat'
+    , outcome='re78'
+    , common_causes=[col for col in synthetic_cps1.columns if col not in ('re78','data_id','treat','re74')]
+)
+# %%
+identified_estimand_cps1 = model_cps1.identify_effect(proceed_when_unidentifiable=True)
+print(identified_estimand_cps1)
+# %%
+causal_estimate = model_cps1.estimate_effect(
+    identified_estimand_cps1, method_name="backdoor.propensity_score_matching"
+)
+print(causal_estimate)
+# %%
+synthetic_cps1.info()
+# %%
+
 # %%
