@@ -7,7 +7,6 @@ import pandas as pd
 import matplotlib as plt
 import warnings
 warnings.filterwarnings('ignore')
-#from pandas_profiling import ProfileReport
 from statsmodels.stats.power import tt_ind_solve_power
 from numpy.random import seed
 from scipy.stats import ttest_ind
@@ -15,20 +14,20 @@ import statsmodels.api as sm
 import dowhy
 import dowhy.api
 from dowhy import CausalModel
-#from dowhy.do_samplers.weighting_sampler import WeightingSampler
-## auxiliar libraries for econml support
-#from sklearn.preprocessing import PolynomialFeatures
-#from sklearn.linear_model import LassoCV
-#from sklearn.ensemble import GradientBoostingRegressor
-
+from dowhy.do_samplers.weighting_sampler import WeightingSampler
+# auxiliar libraries for econml support
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LassoCV
+from sklearn.ensemble import GradientBoostingRegressor
 ## Extracting lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
 #%% rct data
-rct_data = pd.read_stata('../data/raw/nsw.dta')
+rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
 #%% observational data
-observational_data = pd.concat(
-    [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
-    ignore_index=True
-)
+observational_data = pd.read_stata('../data/raw/cps_controls3.dta')
+#pd.concat(
+#    [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
+#    ignore_index=True
+#)
 ## preliminary analysis
 # %%
 #ProfileReport(rct_data)
@@ -76,7 +75,7 @@ def ttest(control, treatment, alpha=0.05):
     return p,lift,power
 # %%
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
-# %%
+# %% why use OLS to XP data might improve its assessment: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
 rct_data_to_reg = rct_data.copy()
 #rct_data_to_reg['age_sqr'] = rct_data_to_reg.age**2
 Y = rct_data_to_reg['re78'].values
@@ -99,7 +98,7 @@ for obs_data_group in observational_data.data_id.unique():
     print(results.summary())
 # %%
 synthetic_cps1 =pd.concat(
-    [treated, observational_data[observational_data.data_id == 'CPS1']]
+    [treated, observational_data[observational_data.data_id == 'CPS3']]
     ).assign(
         treat=lambda x: x.treat.astype(bool)
     )
@@ -110,18 +109,34 @@ model_cps1=CausalModel(
     data = synthetic_cps1
     , treatment='treat'
     , outcome='re78'
-    , common_causes=[col for col in synthetic_cps1.columns if col not in ('re78','data_id','treat','re74')]
+    , common_causes=[col for col in rct_data_to_reg.columns if col not in ('treat','re78','data_id')]
 )
+# %%
+model_cps1.view_model()
 # %%
 identified_estimand_cps1 = model_cps1.identify_effect(proceed_when_unidentifiable=True)
 print(identified_estimand_cps1)
 # %%
 causal_estimate = model_cps1.estimate_effect(
-    identified_estimand_cps1, method_name="backdoor.propensity_score_matching"
+    identified_estimand_cps1, method_name="backdoor.propensity_score_matching"#, confidence_intervals=True
 )
 print(causal_estimate)
 # %%
-synthetic_cps1.info()
-# %%
-
+dml_estimate = model_cps1.estimate_effect(
+    identified_estimand_cps1, method_name="backdoor.econml.dml.DMLCateEstimator"
+    , control_value = 0
+    , treatment_value = 1
+    , target_units = lambda df: df["X0"]>1  # condition used for CATE
+    , confidence_intervals=False
+    , method_params={
+        "init_params":{
+             'model_y':GradientBoostingRegressor()
+            , 'model_t': GradientBoostingRegressor()
+            , "model_final":LassoCV()
+            , 'featurizer':PolynomialFeatures(degree=1, include_bias=True)
+        }
+        , "fit_params":{}
+    }
+)
+print(dml_estimate)
 # %%
