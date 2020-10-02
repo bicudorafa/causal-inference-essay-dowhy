@@ -14,8 +14,8 @@ import statsmodels.api as sm
 import dowhy
 import dowhy.api
 from dowhy import CausalModel
-from dowhy.do_samplers.weighting_sampler import WeightingSampler
-# auxiliar libraries for econml support
+# auxiliar libraries for econml support - https://github.com/microsoft/EconML/issues/284
+import econml
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LassoCV
 from sklearn.ensemble import GradientBoostingRegressor
@@ -23,7 +23,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 #%% rct data
 rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
 #%% observational data
-observational_data = pd.read_stata('../data/raw/cps_controls3.dta')
+observational_data = pd.read_stata('../data/raw/cps_controls.dta')
 #pd.concat(
 #    [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
 #    ignore_index=True
@@ -91,14 +91,14 @@ treated = rct_data[rct_data.treat == 1]
 for obs_data_group in observational_data.data_id.unique():
     to_reg = pd.concat([treated, observational_data[observational_data.data_id == obs_data_group]])
     Y = to_reg['re78'].values
-    X = to_reg[[col for col in rct_data_to_reg.columns if col not in ('re78','data_id')]].values
+    X = to_reg[[col for col in to_reg.columns if col not in ('re78','data_id')]].values
     X = sm.add_constant(X)
     model = sm.OLS(Y,X)
     results = model.fit()
     print(results.summary())
 # %%
 synthetic_cps1 =pd.concat(
-    [treated, observational_data[observational_data.data_id == 'CPS3']]
+    [treated, observational_data[observational_data.data_id == 'CPS1']]
     ).assign(
         treat=lambda x: x.treat.astype(bool)
     )
@@ -109,7 +109,7 @@ model_cps1=CausalModel(
     data = synthetic_cps1
     , treatment='treat'
     , outcome='re78'
-    , common_causes=[col for col in rct_data_to_reg.columns if col not in ('treat','re78','data_id')]
+    , common_causes=[col for col in synthetic_cps1.columns if col not in ('treat','re78','data_id')]
 )
 # %%
 model_cps1.view_model()
@@ -126,8 +126,8 @@ dml_estimate = model_cps1.estimate_effect(
     identified_estimand_cps1, method_name="backdoor.econml.dml.DMLCateEstimator"
     , control_value = 0
     , treatment_value = 1
-    , target_units = lambda df: df["X0"]>1  # condition used for CATE
-    , confidence_intervals=False
+    #, target_units = lambda df: df["X0"]>1  # condition used for CATE
+    , confidence_intervals=True
     , method_params={
         "init_params":{
              'model_y':GradientBoostingRegressor()
