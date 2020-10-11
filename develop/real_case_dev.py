@@ -14,43 +14,21 @@ import statsmodels.api as sm
 import dowhy
 import dowhy.api
 from dowhy import CausalModel
-# auxiliar libraries for econml support - https://github.com/microsoft/EconML/issues/284
-import econml
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LassoCV
-from sklearn.ensemble import GradientBoostingRegressor
 ## Extracting lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
 #%% rct data
 rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
-#%% observational data
-observational_data = pd.read_stata('../data/raw/cps_controls.dta')
+#%% observational data - substituir dados agg por cada uma das samples no site
+observational_data = pd.read_stata('../data/raw/cps_controls3.dta')
 #pd.concat(
 #    [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
 #    ignore_index=True
 #)
 ## preliminary analysis
 # %%
-#ProfileReport(rct_data)
-# %%
-#ProfileReport(observational_data)
-# %%
+# %% - substituir isto aqui por histograma de todas as variáveis com cores dioferente por sample
 rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
 # %%
 observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
-# %%
-## Analysis strategy
-#1 Talk a little bit about the original data, its distribution and the role of randomization
-#  - La Londe main goal: all tecniques available by his time weren't capable of got similar results to the experimental design,
-#    then claiming that experimental design was the only reasonable tool to infer treatment impact
-#  - Try to simulate some of the proposed alternative frameworks used by La Londe (Fixed Effect,TWO-STAGE ESTIMATOR)
-#      - Mas bem talvez, nem os caras do 2o paper o fizeram. Mais importante é mostrar como Dummy Nonexperimental estimation é Naivy
-#2 Demonstrate how the treatment effect is scored by simple t test and an adjusted result by regression
-#3 Present the external data and how it difers from the original one
-# Simulates original La Londes exercice to demonstrate how to apply a simple OLS into new data generates biased results
-#4 explain the tecniques are able to create a new control based on the causal inference methods
-#  - Exercice proposed by Dehejia and Wahba: they claimed that most modern tecniques, such as propensity scores matching, 
-#  were capable of generate better results
-#5 Show rhe results and conclusion
 # %%
 def ttest(control, treatment, alpha=0.05):
     """calculates the ttest pvalue, the percentage lift and the test power based on a pre set alpha
@@ -62,7 +40,7 @@ def ttest(control, treatment, alpha=0.05):
     stat, p = ttest_ind(a=treatment, b=control, nan_policy='omit')
     # mean lift
     mean_diff=np.nanmean(treatment)-np.nanmean(control)
-    lift=(mean_diff/np.nanmean(control))*100.0
+    #lift=(mean_diff/np.nanmean(control))*100.0
     # power parameters
     std_diff=np.sqrt(np.nanvar(treatment)+np.nanvar(control))
     effect_size = mean_diff / std_diff
@@ -72,7 +50,7 @@ def ttest(control, treatment, alpha=0.05):
         effect_size=effect_size, alpha=alpha, power=None
         ,ratio=size_ratio, alternative='two-sided',nobs1=treatment_size
 )
-    return p,lift,power
+    return p,mean_diff,power
 # %%
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
 # %% why use OLS to XP data might improve its assessment: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
@@ -117,26 +95,44 @@ model_cps1.view_model()
 identified_estimand_cps1 = model_cps1.identify_effect(proceed_when_unidentifiable=True)
 print(identified_estimand_cps1)
 # %%
-causal_estimate = model_cps1.estimate_effect(
-    identified_estimand_cps1, method_name="backdoor.propensity_score_matching"#, confidence_intervals=True
+causal_estimate_psm = model_cps1.estimate_effect(
+    identified_estimand_cps1,
+    method_name="backdoor.propensity_score_matching",
+    # confidence_intervals=True,
+    target_units = 'att'
 )
-print(causal_estimate)
+print(causal_estimate_psm)
 # %%
-dml_estimate = model_cps1.estimate_effect(
-    identified_estimand_cps1, method_name="backdoor.econml.dml.DMLCateEstimator"
-    , control_value = 0
-    , treatment_value = 1
-    #, target_units = lambda df: df["X0"]>1  # condition used for CATE
-    , confidence_intervals=True
-    , method_params={
-        "init_params":{
-             'model_y':GradientBoostingRegressor()
-            , 'model_t': GradientBoostingRegressor()
-            , "model_final":LassoCV()
-            , 'featurizer':PolynomialFeatures(degree=1, include_bias=True)
-        }
-        , "fit_params":{}
-    }
+causal_estimate_pss = model_cps1.estimate_effect(
+    identified_estimand_cps1, 
+    method_name="backdoor.propensity_score_stratification",
+    # confidence_intervals=True,
+    target_units = 'att' # comentar algo do porque daria pra usar ATE aqui e doferencas entre ATE e ATT neste e no psm
 )
-print(dml_estimate)
+print(causal_estimate_pss)
 # %%
+causal_estimate_psw = model_cps1.estimate_effect(
+    identified_estimand_cps1, 
+    method_name="backdoor.propensity_score_weighting",
+    target_units = "att",
+    method_params={"weighting_scheme":"ips_normalized_weight"},
+)
+print(causal_estimate_psw)
+# %% ####################
+res_random=model_cps1.refute_estimate(
+    identified_estimand_cps1, dml_estimate
+    , method_name="random_common_cause", random_seed = 667
+)
+print(res_random)
+# %%
+res_placebo=model_cps1.refute_estimate(
+    identified_estimand_cps1, dml_estimate, random_seed = 667
+    , method_name="placebo_treatment_refuter", placebo_type="permute"
+)
+print(res_placebo)
+# %%
+res_subset=model.refute_estimate(
+    identified_estimand, estimate_to_refute, random_seed = 667
+    , method_name="data_subset_refuter", subset_fraction=0.9
+)
+print(res_subset)
