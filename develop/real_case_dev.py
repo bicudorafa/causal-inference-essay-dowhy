@@ -1,5 +1,5 @@
 """Importing Dependencies"""
-# %%
+# %% - paper: https://users.nber.org/~rdehejia/papers/matching.pdf
 # python basics dependencies
 import numpy as np
 import pandas as pd
@@ -17,14 +17,19 @@ from dowhy import CausalModel
 ## Extracting lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
 #%% rct data
 rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
-#%% observational data - substituir dados agg por cada uma das samples no site
-observational_data = pd.read_stata('../data/raw/cps_controls3.dta')
-#pd.concat(
-#    [pd.read_stata('../data/raw/psid_controls.dta'), pd.read_stata('../data/raw/cps_controls.dta')],
-#    ignore_index=True
-#)
+#%% observational data - possivelmente, psid3 vai dar resultado estranho devido a ser menor do que tratamento
+observational_data = pd.concat(
+    [ 
+        pd.read_stata('../data/raw/cps_controls.dta'),
+        pd.read_stata('../data/raw/cps_controls2.dta'),
+        pd.read_stata('../data/raw/cps_controls3.dta'),
+        pd.read_stata('../data/raw/psid_controls.dta'),
+        pd.read_stata('../data/raw/psid_controls2.dta'),
+        pd.read_stata('../data/raw/psid_controls3.dta'),
+    ],
+    ignore_index=True
+)
 ## preliminary analysis
-# %%
 # %% - substituir isto aqui por histograma de todas as variáveis com cores dioferente por sample
 rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
 # %%
