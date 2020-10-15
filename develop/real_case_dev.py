@@ -3,8 +3,7 @@
 # python basics dependencies
 import numpy as np
 import pandas as pd
-#import seaborn as sns
-import matplotlib as plt
+import plotly.express as px
 import warnings
 warnings.filterwarnings('ignore')
 from statsmodels.stats.power import tt_ind_solve_power
@@ -34,7 +33,26 @@ observational_data = pd.concat(
 rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
 # %%
 observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
-# %%
+
+# %% 
+fig=(
+    rct_data
+    .loc[:,['data_id','treat', 'black', 'hispanic', 'married', 'nodegree']]
+    .groupby(['treat', 'black'])
+    .agg(n_subjects=('data_id', 'count'))
+    .groupby(level=0) # it has a similar use case of partition by in sql
+    .apply(lambda x: x / float(x.sum())) # then calculating the share by index 
+    .reset_index()
+    .pipe(
+        px.bar,x='treat',y='n_subjects',color='black'
+        #,labels={
+        #    "ltv_quantile": "LTV Quantile",'n_driver':'Percentage of Drivers','tier':'Loyalty Tier'
+        #} 
+        #,title='Percentage of Loyality Driver by LTV Quantile'
+    )
+)
+fig.update_layout(yaxis=dict(tickformat=".2%")) # to include percent formatting in y axe
+# %% -- XP Causal Inference Analysis
 def ttest(control, treatment, alpha=0.05):
     """calculates the ttest pvalue, the percentage lift and the test power based on a pre set alpha
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html
