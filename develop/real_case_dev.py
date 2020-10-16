@@ -28,31 +28,31 @@ observational_data = pd.concat(
     ],
     ignore_index=True
 )
-## preliminary analysis
+################################## EDA ######################################
 # %% - substituir isto aqui por histograma de todas as variáveis com cores dioferente por sample
-rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
+#rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
 # %%
-observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
+#observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
 
 # %% 
-fig=(
-    rct_data
-    .loc[:,['data_id','treat', 'black', 'hispanic', 'married', 'nodegree']]
-    .groupby(['treat', 'black'])
-    .agg(n_subjects=('data_id', 'count'))
-    .groupby(level=0) # it has a similar use case of partition by in sql
-    .apply(lambda x: x / float(x.sum())) # then calculating the share by index 
-    .reset_index()
-    .pipe(
-        px.bar,x='treat',y='n_subjects',color='black'
-        #,labels={
-        #    "ltv_quantile": "LTV Quantile",'n_driver':'Percentage of Drivers','tier':'Loyalty Tier'
-        #} 
-        #,title='Percentage of Loyality Driver by LTV Quantile'
+def prop_stacked_chart(agg_df, groups_var, cagorical_var):
+    fig=(
+        agg_df
+        #.loc[:,['data_id','treat', 'black', 'hispanic', 'married', 'nodegree']]
+        .loc[:, [groups_var, cagorical_var]]
+        .groupby([groups_var, cagorical_var])
+        .agg(n_subjects=(groups_var, 'count'))
+        .groupby(level=0) # it has a similar use case of partition by in sql
+        .apply(lambda x: x / float(x.sum())) # then calculating the share by index 
+        .reset_index()
+        .pipe(px.bar,x=groups_var,y='n_subjects',color=cagorical_var)
     )
-)
-fig.update_layout(yaxis=dict(tickformat=".2%")) # to include percent formatting in y axe
-# %% -- XP Causal Inference Analysis
+    fig.update_layout(yaxis=dict(tickformat=".2%")) # to include percent formatting in y axe
+    return fig
+fig = prop_stacked_chart(observational_data, 'data_id', 'black')
+fig.show()
+############################################## XP Causal Inference Analysis ############################
+# %% 
 def ttest(control, treatment, alpha=0.05):
     """calculates the ttest pvalue, the percentage lift and the test power based on a pre set alpha
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html
