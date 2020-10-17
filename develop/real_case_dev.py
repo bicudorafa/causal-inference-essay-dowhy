@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import warnings
+
+from statsmodels.tools.tools import categorical
 warnings.filterwarnings('ignore')
 from statsmodels.stats.power import tt_ind_solve_power
 from numpy.random import seed
@@ -35,22 +37,44 @@ observational_data = pd.concat(
 #observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
 
 # %% 
-def prop_stacked_chart(agg_df, groups_var, cagorical_var):
+def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
+    
+    agg_df = pd.DataFrame()
+    for cagorical_var in cagorical_var_list:
+        temp_df = (
+            subject_df
+            .loc[:, [groups_var, cagorical_var]]
+            .groupby([groups_var, cagorical_var])
+            .agg(n_subjects=(groups_var, 'count'))
+            .groupby(level=0) # it has a similar use case of partition by in sql
+            .apply(lambda x: x / float(x.sum())) # then calculating the share by index 
+            .reset_index()
+            .rename(columns={cagorical_var:'categorical_value'})
+            .assign(cagorical_var = cagorical_var)
+        )
+        agg_df = pd.concat([agg_df, temp_df])
+        del temp_df
+
     fig=(
         agg_df
-        #.loc[:,['data_id','treat', 'black', 'hispanic', 'married', 'nodegree']]
-        .loc[:, [groups_var, cagorical_var]]
-        .groupby([groups_var, cagorical_var])
-        .agg(n_subjects=(groups_var, 'count'))
-        .groupby(level=0) # it has a similar use case of partition by in sql
-        .apply(lambda x: x / float(x.sum())) # then calculating the share by index 
-        .reset_index()
-        .pipe(px.bar,x=groups_var,y='n_subjects',color=cagorical_var)
+        #.loc[:, [groups_var, cagorical_var]]
+        #.groupby([groups_var, cagorical_var])
+        #.agg(n_subjects=(groups_var, 'count'))
+        #.groupby(level=0) # it has a similar use case of partition by in sql
+        #.apply(lambda x: x / float(x.sum())) # then calculating the share by index 
+        #.reset_index()
+        .pipe(
+            px.bar, x=groups_var, y='n_subjects',
+            color='categorical_value', facet_col='cagorical_var', facet_col_wrap=4
+        )
     )
+    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
     fig.update_layout(yaxis=dict(tickformat=".2%")) # to include percent formatting in y axe
+    fig.update_xaxes(constrain="domain")  # meanwhile compresses the xaxis by decreasing its "domain")
+    
     return fig
-fig = prop_stacked_chart(observational_data, 'data_id', 'black')
-fig.show()
+fig = prop_stacked_chart(observational_data, 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
+fig.update(layout_showlegend=False).show()
 ############################################## XP Causal Inference Analysis ############################
 # %% 
 def ttest(control, treatment, alpha=0.05):
