@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import warnings
-
-from statsmodels.tools.tools import categorical
 warnings.filterwarnings('ignore')
+from statsmodels.tools.tools import categorical
 from statsmodels.stats.power import tt_ind_solve_power
 from numpy.random import seed
 from scipy.stats import ttest_ind
@@ -38,7 +37,6 @@ observational_data = pd.concat(
 
 # %% 
 def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
-    
     agg_df = pd.DataFrame()
     for cagorical_var in cagorical_var_list:
         temp_df = (
@@ -54,27 +52,21 @@ def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
         )
         agg_df = pd.concat([agg_df, temp_df])
         del temp_df
-
     fig=(
         agg_df
-        #.loc[:, [groups_var, cagorical_var]]
-        #.groupby([groups_var, cagorical_var])
-        #.agg(n_subjects=(groups_var, 'count'))
-        #.groupby(level=0) # it has a similar use case of partition by in sql
-        #.apply(lambda x: x / float(x.sum())) # then calculating the share by index 
-        #.reset_index()
         .pipe(
             px.bar, x=groups_var, y='n_subjects',
             color='categorical_value', facet_col='cagorical_var', facet_col_wrap=4
         )
     )
     fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-    fig.update_layout(yaxis=dict(tickformat=".2%")) # to include percent formatting in y axe
-    fig.update_xaxes(constrain="domain")  # meanwhile compresses the xaxis by decreasing its "domain")
+    fig.update_layout(yaxis=dict(title_text='Percentage per Sample', tickformat=".2%")) # to include percent formatting in y axe
+    fig.update_xaxes(title_text='')
+    fig.update(layout_coloraxis_showscale=False)
     
     return fig
-fig = prop_stacked_chart(observational_data, 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
-fig.update(layout_showlegend=False).show()
+fig = prop_stacked_chart(pd.concat([rct_data,observational_data]), 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
+fig.show()
 ############################################## XP Causal Inference Analysis ############################
 # %% 
 def ttest(control, treatment, alpha=0.05):
