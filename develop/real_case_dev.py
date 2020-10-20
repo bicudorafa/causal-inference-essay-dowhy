@@ -67,6 +67,19 @@ def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
     return fig
 fig = prop_stacked_chart(pd.concat([rct_data,observational_data]), 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
 fig.show()
+
+# %%
+#import plotly.express as px
+df = (
+    observational_data.copy()
+    .loc[:, ['data_id', 'age', 'education']]
+    .pipe(pd.melt, id_vars=['data_id'], value_vars=['age', 'education'])
+)
+fig = px.violin(
+        df, y="value", x="data_id", facet_col="variable"
+        , box=True#, hover_data=df.columns
+)
+fig.show()
 ############################################## XP Causal Inference Analysis ############################
 # %% 
 def ttest(control, treatment, alpha=0.05):
