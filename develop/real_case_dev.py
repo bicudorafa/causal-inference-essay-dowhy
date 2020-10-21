@@ -67,18 +67,23 @@ def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
     return fig
 fig = prop_stacked_chart(pd.concat([rct_data,observational_data]), 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
 fig.show()
-
 # %%
-#import plotly.express as px
-df = (
-    observational_data.copy()
-    .loc[:, ['data_id', 'age', 'education']]
-    .pipe(pd.melt, id_vars=['data_id'], value_vars=['age', 'education'])
-)
-fig = px.violin(
-        df, y="value", x="data_id", facet_col="variable"
-        , box=True#, hover_data=df.columns
-)
+def boxplot_per_groups(subject_df, groups_var, continuous_var_list):
+    melted_df = (
+        subject_df
+        .loc[:, ([groups_var] + continuous_var_list)]
+        .pipe(pd.melt, id_vars=[groups_var], value_vars=continuous_var_list)
+    )
+    fig = px.box(
+            melted_df, y="value", x=groups_var, 
+            color=groups_var, facet_row="variable"
+    )
+    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    fig.update_layout(showlegend=False)
+    fig.update_xaxes(title_text='')
+    fig.update_yaxes(matches=None, title_text='')
+    return fig
+fig = boxplot_per_groups(pd.concat([rct_data,observational_data]), 'data_id', ['age', 'education', 're74', 're75'])
 fig.show()
 ############################################## XP Causal Inference Analysis ############################
 # %% 
