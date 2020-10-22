@@ -31,14 +31,9 @@ observational_data = pd.concat(
 )
 ################################## EDA ######################################
 # %% - substituir isto aqui por histograma de todas as variáveis com cores dioferente por sample
-#rct_data.groupby('treat').agg({'mean', 'median', 'std'}).stack(1)
-# %%
-#observational_data.groupby('data_id').agg({'mean', 'median', 'std'}).stack(1)#.pivot()
-
-# %% 
 def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
     agg_df = pd.DataFrame()
-    for cagorical_var in cagorical_var_list:
+    for cagorical_var in cagorical_var_list: # it might be possible to avoid this loop with a groupby
         temp_df = (
             subject_df
             .loc[:, [groups_var, cagorical_var]]
@@ -65,9 +60,7 @@ def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
     fig.update(layout_coloraxis_showscale=False)
     
     return fig
-fig = prop_stacked_chart(pd.concat([rct_data,observational_data]), 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
-fig.show()
-# %%
+
 def boxplot_per_groups(subject_df, groups_var, continuous_var_list):
     melted_df = (
         subject_df
@@ -83,8 +76,19 @@ def boxplot_per_groups(subject_df, groups_var, continuous_var_list):
     fig.update_xaxes(title_text='')
     fig.update_yaxes(matches=None, title_text='')
     return fig
+# %% 
+fig = boxplot_per_groups(rct_data, 'treat', ['age', 'education', 're74', 're75'])
+fig.show()
+# %%
+fig = prop_stacked_chart(rct_data, 'treat', ['black', 'hispanic', 'married', 'nodegree'])
+fig.show()
+# %%
 fig = boxplot_per_groups(pd.concat([rct_data,observational_data]), 'data_id', ['age', 'education', 're74', 're75'])
 fig.show()
+# %%
+fig = prop_stacked_chart(pd.concat([rct_data,observational_data]), 'data_id', ['black', 'hispanic', 'married', 'nodegree'])
+fig.show()
+# %%
 ############################################## XP Causal Inference Analysis ############################
 # %% 
 def ttest(control, treatment, alpha=0.05):
@@ -110,6 +114,9 @@ def ttest(control, treatment, alpha=0.05):
     return p,mean_diff,power
 # %%
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
+# %%
+def ols_dataframe():
+    pass
 # %% why use OLS to XP data might improve its assessment: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
 rct_data_to_reg = rct_data.copy()
 #rct_data_to_reg['age_sqr'] = rct_data_to_reg.age**2
