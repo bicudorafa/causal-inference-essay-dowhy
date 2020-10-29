@@ -115,19 +115,23 @@ def ttest(control, treatment, alpha=0.05):
 # %%
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
 # %%
-def ols_dataframe():
-    pass
-# %% why use OLS to XP data might improve its assessment: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
-rct_data_to_reg = rct_data.copy()
-#rct_data_to_reg['age_sqr'] = rct_data_to_reg.age**2
-Y = rct_data_to_reg['re78'].values
-# exogenous variables used by lalonde:  age, age squared, years of schooling, high school dropout status, and race
-X = rct_data_to_reg[[col for col in rct_data_to_reg.columns if col not in ('re78','data_id')]].values
-X = sm.add_constant(X)
-model = sm.OLS(Y,X)
-results = model.fit()
-print(results.summary())
-print(results.params)
+def ols_xp_dataframe(rct_data_to_reg, target, no_feature_list):
+    # %% why use OLS to XP data might improve its assessment: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
+    if no_feature_list == None:
+        no_feature_list = [target]
+    else: no_feature_list.append(target)
+    Y = rct_data_to_reg[target].values
+    # exogenous variables used by lalonde:  age, age squared, years of schooling, high school dropout status, and race
+    X = rct_data_to_reg[[col for col in rct_data_to_reg.columns if col not in no_feature_list]].values
+    treatment_position = rct_data_to_reg[[col for col in rct_data_to_reg.columns if col not in no_feature_list]].columns.get_loc('treat')
+    X = sm.add_constant(X)
+    model = sm.OLS(Y,X)
+    results = model.fit()
+    print(results.summary())
+    treatment_coef = results.params[treatment_position + 1]
+    return treatment_coef
+treatment_coef = ols_xp_dataframe(rct_data, 're78', ['data_id'])
+print(f'The treatment coefficient is {treatment_coef}')
 # %%
 treated = rct_data[rct_data.treat == 1]
 for obs_data_group in observational_data.data_id.unique():
