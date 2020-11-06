@@ -115,7 +115,7 @@ def ttest(control, treatment, alpha=0.05):
 # %%
 ttest(rct_data[rct_data.treat == 0]['re78'], rct_data[rct_data.treat == 1]['re78'])
 # %%
-def ols_xp_dataframe(rct_data_to_reg, target, no_feature_list):
+def ols_xp_dataframe(rct_data_to_reg, target, no_feature_list, print_stats=True):
     # %% why use OLS to XP data might improve its assessment: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
     if no_feature_list == None:
         no_feature_list = [target]
@@ -127,21 +127,18 @@ def ols_xp_dataframe(rct_data_to_reg, target, no_feature_list):
     X = sm.add_constant(X)
     model = sm.OLS(Y,X)
     results = model.fit()
-    print(results.summary())
+    if print_stats:
+        print(results.summary())
     treatment_coef = results.params[treatment_position + 1]
     return treatment_coef
 treatment_coef = ols_xp_dataframe(rct_data, 're78', ['data_id'])
-print(f'The treatment coefficient is {treatment_coef}')
+print(f'The Unbiased ATE is {treatment_coef}')
 # %%
 treated = rct_data[rct_data.treat == 1]
 for obs_data_group in observational_data.data_id.unique():
     to_reg = pd.concat([treated, observational_data[observational_data.data_id == obs_data_group]])
-    Y = to_reg['re78'].values
-    X = to_reg[[col for col in to_reg.columns if col not in ('re78','data_id')]].values
-    X = sm.add_constant(X)
-    model = sm.OLS(Y,X)
-    results = model.fit()
-    print(results.summary())
+    treatment_coef = ols_xp_dataframe(to_reg, 're78', ['data_id'], False)
+    print(f'The Biased ATE when using {obs_data_group} as control is {treatment_coef}')
 # %%
 synthetic_cps1 =pd.concat(
     [treated, observational_data[observational_data.data_id == 'CPS1']]
