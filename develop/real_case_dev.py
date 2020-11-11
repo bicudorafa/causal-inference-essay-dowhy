@@ -140,22 +140,19 @@ for obs_data_group in observational_data.data_id.unique():
     treatment_coef = ols_xp_dataframe(to_reg, 're78', ['data_id'], False)
     print(f'The Biased ATE when using {obs_data_group} as control is {treatment_coef}')
 # %%
-synthetic_cps1 =pd.concat(
-    [treated, observational_data[observational_data.data_id == 'CPS1']]
-    ).assign(
-        treat=lambda x: x.treat.astype(bool)
+# graph viz construction
+causal_features = [col for col in rct_data.columns if col not in ('treat','re78','data_id')]
+(
+    CausalModel(
+        data = rct_data
+        , treatment='treat'
+        , outcome='re78'
+        , common_causes=causal_features
     )
-#synthetic_psid = pd.concat([treated, observational_data[observational_data.data_id == 'PSID']])
-# %%
-# With graph
-model_cps1=CausalModel(
-    data = synthetic_cps1
-    , treatment='treat'
-    , outcome='re78'
-    , common_causes=[col for col in synthetic_cps1.columns if col not in ('treat','re78','data_id')]
+    .view_model()
 )
 # %%
-model_cps1.view_model()
+## start building function to iterate though data and output the coef for each sample
 # %%
 identified_estimand_cps1 = model_cps1.identify_effect(proceed_when_unidentifiable=True)
 print(identified_estimand_cps1)
