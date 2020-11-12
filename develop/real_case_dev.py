@@ -140,46 +140,35 @@ for obs_data_group in observational_data.data_id.unique():
     treatment_coef = ols_xp_dataframe(to_reg, 're78', ['data_id'], False)
     print(f'The Biased ATE when using {obs_data_group} as control is {treatment_coef}')
 # %%
-# graph viz construction
-causal_features = [col for col in rct_data.columns if col not in ('treat','re78','data_id')]
-(
-    CausalModel(
-        data = rct_data
-        , treatment='treat'
-        , outcome='re78'
-        , common_causes=causal_features
+def att_causal_estimator(df, outcome, treatment, cofounders_list, method_name, view_model=False):
+    causal_model = CausalModel(
+        data = df, treatment=treatment,
+        outcome=outcome, common_causes=cofounders_list
     )
-    .view_model()
-)
+    if view_model:
+        causal_model.view_model(layout="dot")
+    identified_estimand = causal_model.identify_effect(proceed_when_unidentifiable=True)
+    causal_estimate = causal_model.estimate_effect(
+        identified_estimand, method_name="backdoor.propensity_score_matching",
+        target_units = 'att',#, confidence_intervals=True
+    )
+    return(causal_estimate.value)
+
 # %%
-## start building function to iterate though data and output the coef for each sample
-# %%
-identified_estimand_cps1 = model_cps1.identify_effect(proceed_when_unidentifiable=True)
-print(identified_estimand_cps1)
-# %%
-causal_estimate_psm = model_cps1.estimate_effect(
-    identified_estimand_cps1,
-    method_name="backdoor.propensity_score_matching",
-    # confidence_intervals=True,
-    target_units = 'att'
-)
-print(causal_estimate_psm)
-# %%
-causal_estimate_pss = model_cps1.estimate_effect(
-    identified_estimand_cps1, 
-    method_name="backdoor.propensity_score_stratification",
-    # confidence_intervals=True,
-    target_units = 'att' # comentar algo do porque daria pra usar ATE aqui e doferencas entre ATE e ATT neste e no psm
-)
-print(causal_estimate_pss)
-# %%
-causal_estimate_psw = model_cps1.estimate_effect(
-    identified_estimand_cps1, 
-    method_name="backdoor.propensity_score_weighting",
-    target_units = "att",
-    method_params={"weighting_scheme":"ips_normalized_weight"},
-)
-print(causal_estimate_psw)
+#causal_data = rct_data.assign(treat = rct_data.treat.astype(bool))
+outcome = 're78'
+treatment = 'treat'
+causal_features = [col for col in causal_data.columns if col not in ('treat','re78','data_id')]
+method = "backdoor.propensity_score_matching"
+treated_df = rct_data[rct_data.treat == 1]
+
+for obs_data_group in observational_data.data_id.unique():
+    causal_data = pd.concat(
+        [treated_df, observational_data[observational_data.data_id == obs_data_group]]
+    ).assign(treat = lambda x:x.treat.astype(bool))
+    treatment_coef = att_causal_estimator(causal_data, outcome, treatment, causal_features, method)
+    print(f'The Estimated ATT when using {obs_data_group} as control is {treatment_coef}')
+
 # %% ####################
 res_random=model_cps1.refute_estimate(
     identified_estimand_cps1, dml_estimate
