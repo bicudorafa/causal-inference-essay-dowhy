@@ -17,7 +17,7 @@ from dowhy import CausalModel
 ## Extracting lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
 #%% rct data
 rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
-#%% observational data - possivelmente, psid3 vai dar resultado estranho devido a ser menor do que tratamento
+# observational data - possivelmente, psid3 vai dar resultado estranho devido a ser menor do que tratamento
 observational_data = pd.concat(
     [ 
         pd.read_stata('../data/raw/cps_controls.dta'),
@@ -134,11 +134,15 @@ def ols_xp_dataframe(rct_data_to_reg, target, no_feature_list, print_stats=True)
 treatment_coef = ols_xp_dataframe(rct_data, 're78', ['data_id'])
 print(f'The Unbiased ATE is {treatment_coef}')
 # %%
-treated = rct_data[rct_data.treat == 1]
+treated_df = rct_data[rct_data.treat == 1]
+simple_ols_coef = []
+
 for obs_data_group in observational_data.data_id.unique():
-    to_reg = pd.concat([treated, observational_data[observational_data.data_id == obs_data_group]])
+    to_reg = pd.concat([treated_df, observational_data[observational_data.data_id == obs_data_group]])
     treatment_coef = ols_xp_dataframe(to_reg, 're78', ['data_id'], False)
+    simple_ols_coef.append(treatment_coef)
     print(f'The Biased ATE when using {obs_data_group} as control is {treatment_coef}')
+methods_comparison_dic = {'simple_ols_coef':simple_ols_coef}
 # %%
 def att_causal_estimator(df, outcome, treatment, cofounders_list, method_name, view_model=False):
     causal_model = CausalModel(
@@ -158,17 +162,18 @@ def att_causal_estimator(df, outcome, treatment, cofounders_list, method_name, v
 #causal_data = rct_data.assign(treat = rct_data.treat.astype(bool))
 outcome = 're78'
 treatment = 'treat'
-causal_features = [col for col in causal_data.columns if col not in ('treat','re78','data_id')]
+causal_features = [col for col in rct_data.columns if col not in ('treat','re78','data_id')]
 method = "backdoor.propensity_score_matching"
-treated_df = rct_data[rct_data.treat == 1]
+psm_coef = []
 
 for obs_data_group in observational_data.data_id.unique():
     causal_data = pd.concat(
         [treated_df, observational_data[observational_data.data_id == obs_data_group]]
     ).assign(treat = lambda x:x.treat.astype(bool))
     treatment_coef = att_causal_estimator(causal_data, outcome, treatment, causal_features, method)
+    psm_coef.append(treatment_coef)
     print(f'The Estimated ATT when using {obs_data_group} as control is {treatment_coef}')
-
+methods_comparison_dic['psm_coef'] = psm_coef
 # %% ####################
 res_random=model_cps1.refute_estimate(
     identified_estimand_cps1, dml_estimate
