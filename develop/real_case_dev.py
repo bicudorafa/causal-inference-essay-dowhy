@@ -153,7 +153,7 @@ def att_causal_estimator(df, outcome, treatment, cofounders_list, method_name, v
         causal_model.view_model(layout="dot")
     identified_estimand = causal_model.identify_effect(proceed_when_unidentifiable=True)
     causal_estimate = causal_model.estimate_effect(
-        identified_estimand, method_name="backdoor.propensity_score_matching",
+        identified_estimand, method_name=method_name,
         target_units = 'att',#, confidence_intervals=True
     )
     return(causal_estimate.value)
@@ -163,18 +163,23 @@ def att_causal_estimator(df, outcome, treatment, cofounders_list, method_name, v
 outcome = 're78'
 treatment = 'treat'
 causal_features = [col for col in rct_data.columns if col not in ('treat','re78','data_id')]
-method = "backdoor.propensity_score_matching"
-psm_coef = []
+method_list = ["backdoor.propensity_score_matching", "backdoor.propensity_score_stratification"]
 
-for obs_data_group in observational_data.data_id.unique():
-    causal_data = pd.concat(
-        [treated_df, observational_data[observational_data.data_id == obs_data_group]]
-    ).assign(treat = lambda x:x.treat.astype(bool))
-    treatment_coef = att_causal_estimator(causal_data, outcome, treatment, causal_features, method)
-    psm_coef.append(treatment_coef)
-    print(f'The Estimated ATT when using {obs_data_group} as control is {treatment_coef}')
-methods_comparison_dic['psm_coef'] = psm_coef
-# %% ####################
+for method in method_list:
+    coef_list = []
+    for obs_data_group in observational_data.data_id.unique():
+        causal_data = pd.concat(
+            [treated_df, observational_data[observational_data.data_id == obs_data_group]]
+        ).assign(treat = lambda x:x.treat.astype(bool))
+        treatment_coef = att_causal_estimator(causal_data, outcome, treatment, causal_features, method)
+        coef_list.append(treatment_coef)
+        print(f'The Estimated ATT when using {obs_data_group} as control is {treatment_coef}')
+    methods_comparison_dic[method] = coef_list
+# %%
+coefs_df = pd.DataFrame(methods_comparison_dic,index=observational_data.data_id.unique())
+coefs_df.loc['avg'] = coefs_df.mean()
+coefs_df
+# %% #################### Create pipeline for Robust tests
 res_random=model_cps1.refute_estimate(
     identified_estimand_cps1, dml_estimate
     , method_name="random_common_cause", random_seed = 667
