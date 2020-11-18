@@ -21,11 +21,7 @@ rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
 observational_data = pd.concat(
     [ 
         pd.read_stata('../data/raw/cps_controls.dta'),
-        pd.read_stata('../data/raw/cps_controls2.dta'),
-        pd.read_stata('../data/raw/cps_controls3.dta'),
         pd.read_stata('../data/raw/psid_controls.dta'),
-        pd.read_stata('../data/raw/psid_controls2.dta'),
-        pd.read_stata('../data/raw/psid_controls3.dta'),
     ],
     ignore_index=True
 )
@@ -131,8 +127,8 @@ def ols_xp_dataframe(rct_data_to_reg, target, no_feature_list, print_stats=True)
         print(results.summary())
     treatment_coef = results.params[treatment_position + 1]
     return treatment_coef
-treatment_coef = ols_xp_dataframe(rct_data, 're78', ['data_id'])
-print(f'The Unbiased ATE is {treatment_coef}')
+original_treatment_coef = ols_xp_dataframe(rct_data, 're78', ['data_id'])
+print(f'The Unbiased ATE is {original_treatment_coef}')
 # %%
 treated_df = rct_data[rct_data.treat == 1]
 simple_ols_coef = []
@@ -176,24 +172,6 @@ for method in method_list:
         print(f'The Estimated ATT when using {obs_data_group} as control is {treatment_coef}')
     methods_comparison_dic[method] = coef_list
 # %%
-coefs_df = pd.DataFrame(methods_comparison_dic,index=observational_data.data_id.unique())
+coefs_df = pd.DataFrame(methods_comparison_dic,index=observational_data.data_id.unique()) / original_treatment_coef
 coefs_df.loc['avg'] = coefs_df.mean()
 coefs_df
-# %% #################### Create pipeline for Robust tests
-res_random=model_cps1.refute_estimate(
-    identified_estimand_cps1, dml_estimate
-    , method_name="random_common_cause", random_seed = 667
-)
-print(res_random)
-# %%
-res_placebo=model_cps1.refute_estimate(
-    identified_estimand_cps1, dml_estimate, random_seed = 667
-    , method_name="placebo_treatment_refuter", placebo_type="permute"
-)
-print(res_placebo)
-# %%
-res_subset=model.refute_estimate(
-    identified_estimand, estimate_to_refute, random_seed = 667
-    , method_name="data_subset_refuter", subset_fraction=0.9
-)
-print(res_subset)
