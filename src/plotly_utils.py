@@ -14,11 +14,11 @@ def group_share_per_category(dataframe: pd.DataFrame, group_col: str, category_c
         dataframe
         .loc[:, [group_col, category_col]]
         .groupby([group_col, category_col])
-        .agg(pct_share_col_name=(group_col, 'count'))
+        .agg(count=(group_col, 'count'))
         .groupby(level=0) # it has a similar use case of partition by in sql
         .apply(lambda x: x / float(x.sum())) # then calculating the share by index
         .reset_index()
-        .rename(columns={category_col:'categorical_value'})
+        .rename(columns={category_col:'categorical_value', 'count':pct_share_col_name})
         .assign(category_name = category_col)
     )
     return group_share_per_category_df
