@@ -1,4 +1,5 @@
 """Importing Dependencies"""
+# %%
 import pandas as pd
 
 def group_share_per_category(dataframe: pd.DataFrame, group_col: str, category_col: str):
@@ -9,8 +10,6 @@ def group_share_per_category(dataframe: pd.DataFrame, group_col: str, category_c
     :param category_col: the name of the category_col column
     :returns group_share_per_category_df: df containing the % share each category has by group
     """
-    # enable a dynamic percentual share column naming
-    pct_share_col_name = f'share_per_{group_col}'
     group_share_per_category_df = (
         dataframe
         .loc[:, [group_col, category_col]]
@@ -19,10 +18,22 @@ def group_share_per_category(dataframe: pd.DataFrame, group_col: str, category_c
         .groupby(level=0) # it has a similar use case of partition by in sql
         .apply(lambda x: x / float(x.sum())) # then calculating the share by index
         .reset_index()
-        .rename(columns={category_col:'categorical_value', 'count':pct_share_col_name})
+        .rename(columns={category_col:'category_value', 'count':'value_share_on_group'})
         .assign(category_name = category_col)
     )
     return group_share_per_category_df
+def _mock_subject_level_df():
+    """
+    Simulate df at a subject level with continuous, categorial and group variables
+    """
+    subject_level_dict = {
+        'subject':[str(i) for i in range(10)],
+        'group_identifier':[True if i//5==0 else False for i in range(10)],
+        'categorical_example':[i % 2 for i in range(10)],
+        'continuous_example': [i * 5 for i in range(10)]
+    }
+    subject_level_df = pd.DataFrame(data=subject_level_dict)
+    return subject_level_df
 
 def group_share_per_category_looper(
         dataframe: pd.DataFrame, group_col: str, category_col_list: list
