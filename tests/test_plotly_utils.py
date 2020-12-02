@@ -31,13 +31,12 @@ def _mock_subject_level_df():
 )
 def test_group_share_per_category(_mock_subject_level_df, group_identifier, expected_result):
     """Test a function to automate integration tests of unique elements per column"""
-    to_test_pd_series = pu.group_share_per_category(
+    to_test_pd_df = pu.group_share_per_category(
         _mock_subject_level_df,'group_identifier','categorical_example'
     )
-    value_to_check = to_test_pd_series.loc[
-        (to_test_pd_series.group_identifier == group_identifier)
-        & (to_test_pd_series.categorical_value == 0)
-        , 'share_per_group_identifier'
+    value_to_check = to_test_pd_df.loc[
+        (to_test_pd_df.group_identifier == group_identifier)
+        & (to_test_pd_df.category_value == 0)
+        , 'value_share_on_group'
     ][0]
-
     assert value_to_check == expected_result
