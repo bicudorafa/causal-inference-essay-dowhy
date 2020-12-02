@@ -1,5 +1,4 @@
 """Importing Dependencies"""
-# %%
 import sys
 import pytest
 import pandas as pd
@@ -9,7 +8,7 @@ try:
     import plotly_utils as pu
 except (ModuleNotFoundError, ImportError) as error_message:
     print("{} fileure".format(type(error_message)))
-#%%
+
 @pytest.fixture
 def _mock_subject_level_df():
     """
@@ -18,7 +17,8 @@ def _mock_subject_level_df():
     subject_level_dict = {
         'subject':[str(i) for i in range(10)],
         'group_identifier':[True if i//5==0 else False for i in range(10)],
-        'categorical_example':[i % 2 for i in range(10)],
+        'categorical_example_1':[i % 2 for i in range(10)],
+        'categorical_example_2':[i % 2 for i in range(1,11)],
         'continuous_example': [i * 5 for i in range(10)]
     }
     subject_level_df = pd.DataFrame(data=subject_level_dict)
@@ -32,7 +32,7 @@ def _mock_subject_level_df():
 def test_group_share_per_category(_mock_subject_level_df, group_identifier, expected_result):
     """Test a function to automate integration tests of unique elements per column"""
     to_test_pd_df = pu.group_share_per_category(
-        _mock_subject_level_df,'group_identifier','categorical_example'
+        _mock_subject_level_df,'group_identifier','categorical_example_1'
     )
     value_to_check = to_test_pd_df.loc[
         (to_test_pd_df.group_identifier == group_identifier)
@@ -40,3 +40,13 @@ def test_group_share_per_category(_mock_subject_level_df, group_identifier, expe
         , 'value_share_on_group'
     ][0]
     assert value_to_check == expected_result
+
+def test_group_share_per_category_looper(_mock_subject_level_df):
+    """Straightforward test to validate the looping is function is working properly"""
+    test_category_col_list = category_col_list=['categorical_example_1','categorical_example_2']
+    to_test_pd_df = pu.group_share_per_category_looper(
+        _mock_subject_level_df, 'group_identifier', category_col_list=test_category_col_list
+    )
+    assert type(to_test_pd_df) == pd.core.frame.DataFrame
+    assert to_test_pd_df.empty == False
+
