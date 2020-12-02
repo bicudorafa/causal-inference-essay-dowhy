@@ -22,18 +22,6 @@ def group_share_per_category(dataframe: pd.DataFrame, group_col: str, category_c
         .assign(category_name = category_col)
     )
     return group_share_per_category_df
-def _mock_subject_level_df():
-    """
-    Simulate df at a subject level with continuous, categorial and group variables
-    """
-    subject_level_dict = {
-        'subject':[str(i) for i in range(10)],
-        'group_identifier':[True if i//5==0 else False for i in range(10)],
-        'categorical_example':[i % 2 for i in range(10)],
-        'continuous_example': [i * 5 for i in range(10)]
-    }
-    subject_level_df = pd.DataFrame(data=subject_level_dict)
-    return subject_level_df
 
 def group_share_per_category_looper(
         dataframe: pd.DataFrame, group_col: str, category_col_list: list
