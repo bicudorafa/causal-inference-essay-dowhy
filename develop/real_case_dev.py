@@ -47,7 +47,7 @@ def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
         agg_df
         .pipe(
             px.bar, x=groups_var, y='n_subjects',
-            color='categorical_value', facet_col='cagorical_var', facet_col_wrap=4
+            color='categorical_value', facet_col='cagorical_var', facet_col_wrap=len(agg_df.cagorical_var.unique())
         )
     )
     fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
