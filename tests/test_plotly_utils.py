@@ -2,6 +2,7 @@
 import sys
 import pytest
 import pandas as pd
+from plotly import graph_objs
 # Env tests
 try:
     sys.path.insert(1, './src')  # the type of path is string
@@ -43,10 +44,20 @@ def test_group_share_per_category(_mock_subject_level_df, group_identifier, expe
 
 def test_group_share_per_category_looper(_mock_subject_level_df):
     """Straightforward test to validate the looping is function is working properly"""
-    test_category_col_list = category_col_list=['categorical_example_1','categorical_example_2']
+    test_category_col_list = ['categorical_example_1','categorical_example_2']
     to_test_pd_df = pu.group_share_per_category_looper(
         _mock_subject_level_df, 'group_identifier', category_col_list=test_category_col_list
     )
     assert type(to_test_pd_df) == pd.core.frame.DataFrame
     assert to_test_pd_df.empty == False
+
+def test_prop_stacked_chart(_mock_subject_level_df):
+    """Straightforward test to validate the plotly applicator is working properly"""
+    test_category_col_list = ['categorical_example_1','categorical_example_2']
+    to_test_pd_df = pu.group_share_per_category_looper(
+        _mock_subject_level_df, 'group_identifier', category_col_list=test_category_col_list
+    )
+    test_fig = pu.prop_stacked_chart(to_test_pd_df)
+    assert type(test_fig) == graph_objs._figure.Figure
+
 
