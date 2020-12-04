@@ -57,7 +57,8 @@ def test_prop_stacked_chart(_mock_subject_level_df):
     to_test_pd_df = pu.group_share_per_category_looper(
         _mock_subject_level_df, 'group_identifier', category_col_list=test_category_col_list
     )
-    test_fig = pu.prop_stacked_chart(to_test_pd_df)
+    test_fig = pu.prop_stacked_chart(
+        to_test_pd_df, 'group_identifier', 'value_share_on_group',
+        'category_value', 'category_name'
+    )
     assert type(test_fig) == graph_objs._figure.Figure
-
-
