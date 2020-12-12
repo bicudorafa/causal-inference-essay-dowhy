@@ -86,3 +86,24 @@ def continuous_variables_to_boxplot_format(
     )
     return melted_df
 
+def adjusted_boxplot_per_groups(
+        melted_df: pd.DataFrame, group_col: str, std_y="value", std_facet_row="variable"
+    ):
+    """
+    Plots a boxplot chart by using plotly express interface and the output from the above function
+    :param melted_df: manipulated df from continuous_variables_to_boxplot_format
+    :param group_col: the name of the group column
+    :param y: column containing the variables' values
+    :param facet_row: column containing the variables' names
+    :returns fig: plotly object containing boxplots
+    """
+    fig = px.box(
+        melted_df, y=std_y, x=group_col, 
+        color=group_col, facet_row=std_facet_row
+    )
+    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    fig.update_layout(showlegend=False)
+    fig.update_xaxes(title_text='')
+    fig.update_yaxes(matches=None, title_text='')
+
+    return fig
