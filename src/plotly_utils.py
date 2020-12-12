@@ -68,3 +68,21 @@ def prop_stacked_chart(
     fig.update(layout_coloraxis_showscale=False)
 
     return fig
+
+def continuous_variables_to_boxplot_format(
+        dataframe: pd.DataFrame, group_col: str, continuous_col_list: list
+    ):
+    """
+    Melts a df into a group, variable name and value structure to be plotted as a boxplot
+    :param dataframe: original dataframe in a subject level
+    :param group_col: the name of the group column
+    :param continuous_col_list: the list of continuous columns
+    :returns melted_df: group_share_per_category concatened outputed dfs
+    """
+    melted_df = (
+        dataframe
+        .loc[:, ([group_col] + continuous_col_list)]
+        .pipe(pd.melt, id_vars=[group_col], value_vars=continuous_col_list)
+    )
+    return melted_df
+

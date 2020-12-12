@@ -20,7 +20,8 @@ def _mock_subject_level_df():
         'group_identifier':[True if i//5==0 else False for i in range(10)],
         'categorical_example_1':[i % 2 for i in range(10)],
         'categorical_example_2':[i % 2 for i in range(1,11)],
-        'continuous_example': [i * 5 for i in range(10)]
+        'continuous_example_1': [i * 5 for i in range(10)],
+        'continuous_example_2': [i * 6 for i in range(10)]
     }
     subject_level_df = pd.DataFrame(data=subject_level_dict)
     return subject_level_df
@@ -43,7 +44,7 @@ def test_group_share_per_category(_mock_subject_level_df, group_identifier, expe
     assert value_to_check == expected_result
 
 def test_group_share_per_category_looper(_mock_subject_level_df):
-    """Straightforward test to validate the looping is function is working properly"""
+    """Straightforward tests to validate the looping is function is working properly"""
     test_category_col_list = ['categorical_example_1','categorical_example_2']
     to_test_pd_df = pu.group_share_per_category_looper(
         _mock_subject_level_df, 'group_identifier', category_col_list=test_category_col_list
@@ -62,3 +63,12 @@ def test_prop_stacked_chart(_mock_subject_level_df):
         'category_value', 'category_name'
     )
     assert type(test_fig) == graph_objs._figure.Figure
+
+def test_continuous_variables_to_boxplot_format(_mock_subject_level_df):
+    """Straightforward tests to validate the melt operation is working properly"""
+    test_continuous_col_list = ['continuous_example_1','continuous_example_2']
+    to_test_boxplot_df = pu.continuous_variables_to_boxplot_format(
+        _mock_subject_level_df, 'group_identifier', continuous_col_list=test_continuous_col_list
+    )
+    assert type(to_test_boxplot_df) == pd.core.frame.DataFrame
+    assert to_test_boxplot_df.empty == False
