@@ -72,3 +72,14 @@ def test_continuous_variables_to_boxplot_format(_mock_subject_level_df):
     )
     assert isinstance(to_test_boxplot_df, pd.core.frame.DataFrame)
     assert not to_test_boxplot_df.empty
+
+def test_adjusted_boxplot_per_groups(_mock_subject_level_df):
+    """Straightforward test to validate the plotly applicator is working properly"""
+    test_continuous_col_list = ['continuous_example_1','continuous_example_2']
+    to_test_boxplot_df = pu.continuous_variables_to_boxplot_format(
+        _mock_subject_level_df, 'group_identifier', continuous_col_list=test_continuous_col_list
+    )
+    test_fig = pu.adjusted_boxplot_per_groups(
+        to_test_boxplot_df, 'group_identifier'
+    )
+    assert isinstance(test_fig, graph_objs._figure.Figure)
