@@ -49,8 +49,8 @@ def test_group_share_per_category_looper(_mock_subject_level_df):
     to_test_pd_df = pu.group_share_per_category_looper(
         _mock_subject_level_df, 'group_identifier', category_col_list=test_category_col_list
     )
-    assert type(to_test_pd_df) == pd.core.frame.DataFrame
-    assert to_test_pd_df.empty == False
+    assert isinstance(to_test_pd_df, pd.core.frame.DataFrame)
+    assert not to_test_pd_df.empty
 
 def test_prop_stacked_chart(_mock_subject_level_df):
     """Straightforward test to validate the plotly applicator is working properly"""
@@ -62,7 +62,7 @@ def test_prop_stacked_chart(_mock_subject_level_df):
         to_test_pd_df, 'group_identifier', 'value_share_on_group',
         'category_value', 'category_name'
     )
-    assert type(test_fig) == graph_objs._figure.Figure
+    assert isinstance(test_fig, graph_objs._figure.Figure)
 
 def test_continuous_variables_to_boxplot_format(_mock_subject_level_df):
     """Straightforward tests to validate the melt operation is working properly"""
@@ -70,5 +70,5 @@ def test_continuous_variables_to_boxplot_format(_mock_subject_level_df):
     to_test_boxplot_df = pu.continuous_variables_to_boxplot_format(
         _mock_subject_level_df, 'group_identifier', continuous_col_list=test_continuous_col_list
     )
-    assert type(to_test_boxplot_df) == pd.core.frame.DataFrame
-    assert to_test_boxplot_df.empty == False
+    assert isinstance(to_test_boxplot_df, pd.core.frame.DataFrame)
+    assert not to_test_boxplot_df.empty
