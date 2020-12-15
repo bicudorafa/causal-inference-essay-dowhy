@@ -17,6 +17,7 @@ from dowhy import CausalModel
 ## Extracting lalonde data: http://users.nber.org/~rdehejia/nswdata2.html
 #%% rct data
 rct_data = pd.read_stata('../data/raw/nsw_dw.dta')
+rct_data.sample(10)
 # observational data - possivelmente, psid3 vai dar resultado estranho devido a ser menor do que tratamento
 observational_data = pd.concat(
     [ 
@@ -25,6 +26,7 @@ observational_data = pd.concat(
     ],
     ignore_index=True
 )
+observational_data.sample(10)
 ################################## EDA ######################################
 # %% - substituir isto aqui por histograma de todas as variáveis com cores dioferente por sample
 def prop_stacked_chart(subject_df, groups_var, cagorical_var_list):
