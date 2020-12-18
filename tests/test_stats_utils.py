@@ -22,9 +22,9 @@ def test_mean_ttest_analyzer(add_mu, add_sigma, add_n, p_exp_result, power_exp_r
     seed(666)
     population_1 = np.random.normal(0, 1, 50)
     population_2 = np.random.normal(0 + add_mu, 1 + add_sigma, 50 + add_n)
-    p, power = su.mean_ttest_analyzer(population_1, population_2)
+    pvalue, power, _ = su.mean_ttest_analyzer(population_1, population_2)
      # reference p, power values
-    p_assessment = p < 0.1
+    p_assessment = pvalue < 0.1
     power_assessment = power > 0.6
-    assert p_assessment
-    assert power_assessment
+    assert p_assessment == p_exp_result, "error on pvalue comparison"
+    assert power_assessment == power_exp_result, "error on power comparison"
