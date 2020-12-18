@@ -4,3 +4,6 @@
 .vscode/
 # virtual environment 
 .venv/
+# cache files
+.pytest_cache/
+__pycache__/
