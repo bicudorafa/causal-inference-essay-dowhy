@@ -1,10 +1,9 @@
 """Importing Dependencies"""
 import sys
 import pytest
-import numpy as np
 import pandas as pd
+import numpy as np
 from numpy.random import seed
-from sklearn.datasets import make_regression
 # Env tests
 try:
     sys.path.insert(1, './src')  # the type of path is string
@@ -33,21 +32,29 @@ def test_mean_ttest_analyzer(add_mu, add_sigma, add_n, p_exp_result, power_exp_r
     assert p_assessment == p_exp_result, f'the xp pvalue was {pvalue}'
     assert power_assessment == power_exp_result, f'the xp power was {power}'
 
-@pytest.fixture
-def _mock_ols_df():
-    """
-    Simulates a random df to be used at OLS in which the coef are know prior
-    """
-    features, target, mock_ols_coeffs = make_regression(
-        n_samples=100, n_features=10, n_informative=10, 
-        coef=True
-    )
-    features_df = pd.DataFrame(features, columns=[f'x_{i}' for i in range(10)])
-    target_df =pd.DataFrame(target, columns=['y'])
-    _mock_ols_df = pd.concat([features_df,target_df], axis=1)
-    return _mock_ols_df, mock_ols_coeffs
+@pytest.mark.parametrize(
+    "add_no_feature_column, no_feature_list", [
+        (False, None),
+        (True, ['x_no_feature']),
+    ]
+)
 
-def test_ols_dataframe_coeffs(_mock_ols_df, mock_ols_coeffs):
-    """Test OLS applier to pandas dataframes baseged on columns selection"""
-    coeffs = su.ols_dataframe_coeffs(_mock_ols_df)
-    assert coeffs == mock_ols_coeffs
+def test_dataframe_ols_coeffs(add_no_feature_column, no_feature_list):
+    """Test OLS applier to pandas dataframes based on columns selection"""
+    # mock data generation - I wont use fixtures due to the impossibility of generating 2 artifacts
+    x_0 = np.random.normal(0, 1, 100)
+    x_1 = np.random.normal(0, 1, 100)
+    x_2 = np.random.normal(0, 1, 100)
+    x_3 = np.random.normal(0, 1, 100)
+    mock_ols_coeffs = np.array([0., 1., 2., 3.])
+    target = np.dot(np.transpose([x_0, x_1, x_2, x_3]), mock_ols_coeffs)
+    _mock_ols_df = pd.DataFrame(data={'x_1':x_1, 'x_2':x_2, 'x_3':x_3, 'y':target})
+    if add_no_feature_column:
+        _mock_ols_df = _mock_ols_df.assign(
+            x_no_feature = [True if i % 2==0 else False for i in range(100)]
+        )
+    # proper testing
+    target = 'y'
+    #mock_ols_coeffs = np.array([1., 1., 2., 3.])
+    coeffs = su.dataframe_ols_coeffs(_mock_ols_df, target, no_feature_list, print_stats=False)
+    assert np.allclose(coeffs, mock_ols_coeffs, atol=0.3)

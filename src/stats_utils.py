@@ -1,10 +1,12 @@
 """Importing Dependencies"""
 import numpy as np
+import pandas as pd
+import statsmodels.api as sm
 from numpy.random import seed
 from scipy.stats import ttest_ind
 from statsmodels.stats.power import tt_ind_solve_power
 
-def mean_ttest_analyzer(sample_1, sample_2, alpha=0.05, return_abs_diff=True):
+def mean_ttest_analyzer(sample_1:np.array, sample_2:np.array, alpha=0.05, return_abs_diff=True):
     """
     Make a quick statistical assessment for the mean of 2 different samples (hypothesis test based)
     :param dataframe: original dataframe in a subject level
@@ -28,3 +30,32 @@ def mean_ttest_analyzer(sample_1, sample_2, alpha=0.05, return_abs_diff=True):
         return pvalue, power, abs_mean_diff
     else:
         return pvalue, power
+
+def dataframe_ols_coeffs(
+        df_to_ols:pd.DataFrame, target_col:str, no_feature_col_list:list, print_stats=True
+    ):
+    """
+    Executes an OLS regression on a dataframe a returns its coefficients (optionally, its summary)
+    :param df_to_ols: original dataframe to be inputed on the OLS
+    :param target_col: target varibale columns name
+    :param no_feature_col_list: list containing any columns to be not included on the OLS
+    :param print_stats: print OLS regression full output (or not)
+    :returns coeffs_array: np.array containing coefficients
+    """
+    # consolidating columns that aren't regressors
+    if no_feature_col_list is None:
+        no_feature_col_list = [target_col]
+    else:
+        no_feature_col_list.append(target_col)
+    features_final_list = [col for col in df_to_ols.columns if col not in no_feature_col_list]
+
+    target_vector = df_to_ols[target_col].values
+    variables_matrix = sm.add_constant(
+        df_to_ols[features_final_list].values
+    )
+    model = sm.OLS(target_vector, variables_matrix)
+    results = model.fit()
+    if print_stats:
+        print(results.summary())
+    treatment_coef = results.params
+    return treatment_coef
