@@ -49,11 +49,16 @@ def dataframe_ols_coeffs(
         no_feature_col_list.append(target_col)
     features_final_list = [col for col in df_to_ols.columns if col not in no_feature_col_list]
     # ols execution
-    target_vector = df_to_ols[target_col]
-    variables_matrix = sm.add_constant(df_to_ols[features_final_list])
-    model = sm.OLS(target_vector, variables_matrix)
+    target_df = df_to_ols[target_col]
+    variables_df = sm.add_constant(df_to_ols[features_final_list])
+    # final data validation as stats models doesn't deal with boolean columns
+    for col in variables_df:
+        if variables_df[col].dtype == bool:
+            variables_df[col] = variables_df[col].astype(int)
+    model = sm.OLS(target_df, variables_df)
     results = model.fit()
     if print_stats:
         print(results.summary())
-    treatment_coef = results.params
-    return treatment_coef
+    ols_coeffs = results.params
+    return ols_coeffs
+
