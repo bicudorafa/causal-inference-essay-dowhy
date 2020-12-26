@@ -40,7 +40,7 @@ def dataframe_ols_coeffs(
     :param target_col: target varibale columns name
     :param no_feature_col_list: list containing any columns to be not included on the OLS
     :param print_stats: print OLS regression full output (or not)
-    :returns coeffs_array: np.array containing coefficients
+    :returns coeffs_array: pd.series containing coefficients
     """
     # consolidating columns that aren't regressors
     if no_feature_col_list is None:
@@ -48,11 +48,9 @@ def dataframe_ols_coeffs(
     else:
         no_feature_col_list.append(target_col)
     features_final_list = [col for col in df_to_ols.columns if col not in no_feature_col_list]
-
-    target_vector = df_to_ols[target_col].values
-    variables_matrix = sm.add_constant(
-        df_to_ols[features_final_list].values
-    )
+    # ols execution
+    target_vector = df_to_ols[target_col]
+    variables_matrix = sm.add_constant(df_to_ols[features_final_list])
     model = sm.OLS(target_vector, variables_matrix)
     results = model.fit()
     if print_stats:

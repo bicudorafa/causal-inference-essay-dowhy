@@ -42,12 +42,12 @@ def test_mean_ttest_analyzer(add_mu, add_sigma, add_n, p_exp_result, power_exp_r
 def test_dataframe_ols_coeffs(add_no_feature_column, no_feature_list):
     """Test OLS applier to pandas dataframes based on columns selection"""
     # mock data generation - I wont use fixtures due to the impossibility of generating 2 artifacts
-    x_0 = np.random.normal(0, 1, 100)
+    const = np.random.normal(0, 1, 100)
     x_1 = np.random.normal(0, 1, 100)
     x_2 = np.random.normal(0, 1, 100)
     x_3 = np.random.normal(0, 1, 100)
     mock_ols_coeffs = np.array([0., 1., 2., 3.])
-    target = np.dot(np.transpose([x_0, x_1, x_2, x_3]), mock_ols_coeffs)
+    target = np.dot(np.transpose([const, x_1, x_2, x_3]), mock_ols_coeffs)
     _mock_ols_df = pd.DataFrame(data={'x_1':x_1, 'x_2':x_2, 'x_3':x_3, 'y':target})
     if add_no_feature_column:
         _mock_ols_df = _mock_ols_df.assign(
@@ -55,6 +55,5 @@ def test_dataframe_ols_coeffs(add_no_feature_column, no_feature_list):
         )
     # proper testing
     target = 'y'
-    #mock_ols_coeffs = np.array([1., 1., 2., 3.])
     coeffs = su.dataframe_ols_coeffs(_mock_ols_df, target, no_feature_list, print_stats=False)
-    assert np.allclose(coeffs, mock_ols_coeffs, atol=0.3)
+    assert np.allclose(coeffs.values, mock_ols_coeffs, atol=0.3)
