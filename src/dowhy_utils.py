@@ -1,13 +1,8 @@
 """Importing Dependencies"""
-import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-from numpy.random import seed
-from scipy.stats import ttest_ind
-from statsmodels.stats.power import tt_ind_solve_power
+from dowhy import CausalModel
 
 def dowhy_quick_backdoor_estimator(
-        dataframe, outcome, treatment, 
+        dataframe, outcome, treatment,
         cofounders_list, method_name,
         populaton_of_interest='ate', view_model=False
     ):
@@ -18,4 +13,15 @@ def dowhy_quick_backdoor_estimator(
     :param category_col: the name of the category_col column
     :returns group_share_per_category_df: df containing the % share each category has by group
     """
-    pass
+    causal_model = CausalModel(
+        data=dataframe, treatment=treatment,
+        outcome=outcome, common_causes=cofounders_list
+    )
+    if view_model:
+        causal_model.view_model(layout="dot")
+    identified_estimand = causal_model.identify_effect(proceed_when_unidentifiable=True)
+    causal_estimate = causal_model.estimate_effect(
+        identified_estimand, method_name=method_name,
+        target_units = populaton_of_interest#, confidence_intervals=True # not in this release
+    )
+    return causal_estimate.value
