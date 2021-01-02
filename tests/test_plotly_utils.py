@@ -1,7 +1,8 @@
 """Importing Dependencies"""
 import sys
-import pytest
+import numpy as np
 import pandas as pd
+import pytest
 from plotly import graph_objs
 # Env tests
 try:
@@ -81,5 +82,20 @@ def test_adjusted_boxplot_per_groups(_mock_subject_level_df):
     )
     test_fig = pu.adjusted_boxplot_per_groups(
         to_test_boxplot_df, 'group_identifier'
+    )
+    assert isinstance(test_fig, graph_objs._figure.Figure)
+
+def test_to_distplot_per_groups_format(_mock_subject_level_df):
+    """Test if outputed lists are in the correct format"""
+    to_plot_data, to_plot_labels = pu.to_distplot_per_groups_format(
+        _mock_subject_level_df, 'continuous_example_1', 'group_identifier'
+    )
+    assert  all(isinstance(element, np.ndarray) for element in to_plot_data)
+    assert  all(isinstance(element, str) for element in to_plot_labels)
+
+def test_distplot_per_groups(_mock_subject_level_df):
+    """Straightforward test to validate the plotly applicator is working properly"""
+    test_fig = pu.distplot_per_groups(
+        _mock_subject_level_df, 'continuous_example_1', 'group_identifier'
     )
     assert isinstance(test_fig, graph_objs._figure.Figure)
