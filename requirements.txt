@@ -41,7 +41,7 @@ multidict==4.7.6
 nbformat==5.0.8
 networkx==2.5
 numba==0.51.2
-numpy==1.19.1
+numpy==1.21.0
 oauthlib==3.1.0
 opt-einsum==3.3.0
 packaging==20.4
